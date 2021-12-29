@@ -1,16 +1,19 @@
 {
   "name": "wmen-be",
   "version": "1.0.0",
-  "description": "wmen-be",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/app.js",
+    "dev": "nodemon src/app.ts",
+    "build": "tsc -p ."
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/R8P/wmen-be.git"
   },
-  "author": "Abdulkadir",
+  "keywords": [],
+  "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/R8P/wmen-be/issues"
@@ -20,6 +23,10 @@
     "express": "^4.17.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "@types/express": "^4.17.13",
+    "@types/node": "^17.0.5",
+    "nodemon": "^2.0.15",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
   }
 }
