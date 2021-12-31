@@ -1,20 +1,100 @@
-import express, {Application, Request, Response, NextFunction} from 'express';
-import * as fs from 'fs';
-import * as path from 'path';
-import IPartner from "./interface/partner.interface";
+import 'reflect-metadata';
+import '@/index';
+import {validationMetadatasToSchemas} from 'class-validator-jsonschema';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import config from 'config';
+import express from 'express';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import morgan from 'morgan';
+import {getMetadataArgsStorage, useExpressServer} from 'routing-controllers';
+import {routingControllersToSpec} from 'routing-controllers-openapi';
+import swaggerUi from 'swagger-ui-express';
+import errorMiddleware from '@middlewares/error.middleware';
+import {logger, stream} from '@utils/logger';
 
-const app: Application = express();
+class App {
+  public app: express.Application;
+  public port: string | number;
+  public env: string;
 
-app.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.send('hello');
-});
+  constructor(Controllers: Function[]) {
+    this.app = express();
+    this.port = 3000;
+    this.env = process.env.NODE_ENV || 'development';
 
-function getAllPartners(): Array<IPartner> {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/partners.json'), {
-        encoding: 'utf8',
-        flag: 'r'
-    }));
+    this.initializeMiddlewares();
+    this.initializeRoutes(Controllers);
+    this.initializeSwagger(Controllers);
+    this.initializeErrorHandling();
+  }
+
+
+  public listen() {
+    this.app.listen(this.port, () => {
+      logger.info(`=================================`);
+      logger.info(`======= ENV: ${this.env} =======`);
+      logger.info(`🚀 App listening on the port ${this.port}`);
+      logger.info(`=================================`);
+    });
+  }
+
+  public getServer() {
+    return this.app;
+  }
+
+  private initializeMiddlewares() {
+    this.app.use(morgan(config.get('log.format'), {stream}));
+    this.app.use(hpp());
+    this.app.use(helmet());
+    this.app.use(compression());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({extended: true}));
+    this.app.use(cookieParser());
+  }
+
+  private initializeRoutes(controllers: Function[]) {
+    useExpressServer(this.app, {
+      cors: true,
+      controllers: controllers,
+      defaultErrorHandler: false,
+    });
+  }
+
+  private initializeSwagger(controllers: Function[]) {
+    const schemas = validationMetadatasToSchemas({
+      refPointerPrefix: '#/components/schemas/',
+    });
+
+    const routingControllersOptions = {
+      controllers: controllers,
+    };
+
+    const storage = getMetadataArgsStorage();
+    const spec = routingControllersToSpec(storage, routingControllersOptions, {
+      components: {
+        schemas,
+        securitySchemes: {
+          basicAuth: {
+            scheme: 'basic',
+            type: 'http',
+          },
+        },
+      },
+      info: {
+        description: 'Generated with `routing-controllers-openapi`',
+        title: 'A sample API',
+        version: '1.0.0',
+      },
+    });
+
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+  }
+
+  private initializeErrorHandling() {
+    this.app.use(errorMiddleware);
+  }
 }
 
-console.log(getAllPartners())
-app.listen(5000, () => console.log('Server running'));
+export default App;
