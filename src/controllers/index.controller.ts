@@ -2,7 +2,7 @@ import {Controller, Get, Req, Res} from 'routing-controllers';
 import fs from "fs";
 import {Request, Response} from 'express';
 
-// Todo: Move this to global state
+
 const currentPoint: Coordinate = {
   lat: 51.5144636,
   long: -0.142571
