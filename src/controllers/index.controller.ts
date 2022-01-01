@@ -26,7 +26,7 @@ export class IndexController {
     lat2 = this.toRadian(lat2);
 
     const a: number = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
-    const R: number = 6371; // the radius of the world
+    const R: number = 6371;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
